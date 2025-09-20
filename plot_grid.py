@@ -3,6 +3,44 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from shapely.geometry import Point
 
+
+
+grid =  np.array([[[0., 0., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., 0., 0., 0.]],
+
+       [[0., 2., 0., 0.],
+        [0., 1., 1., 2.],
+        [1., 2., 1., 0.],
+        [1., 0., 0., 2.],
+        [0., 0., 0., 0.]],
+
+       [[0., 0., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [0., 0., 0., 0.]],
+
+       [[0., 0., 0., 0.],
+        [1., 0., 3., 0.],
+        [0., 0., 2., 1.],
+        [0., 1., 2., 1.],
+        [0., 0., 0., 0.]],
+
+       [[0., 0., 0., 0.],
+        [3., 0., 0., 0.],
+        [2., 0., 0., 0.],
+        [2., 0., 0., 0.],
+        [0., 0., 0., 0.]]])
+holes =  [(2, 3, 'right'), (2, 0, 'right'), (1, 3, 'right'), (0, 1, 'bottom')]
+move_history =  [(1, 1, -1), (1, 1, -1), (1, 2, 1), (2, 3, 1), (2, 3, 1), (2, 2, 1), (2, 3, -1), (3, 3, 1), (3, 2, 1), (3, 1, -1), (3, 2, 1), (3, 2, 1), (3, 3, 1), (2, 3, 1), (2, 2, -1), (1, 2, 1), (1, 1, -1)]
+
+
+
+
+
 directions = {
   "top": [0,2],
   "right": [1,3],
@@ -85,11 +123,23 @@ def plot_holes(holes):
             assert(False)
         plt.scatter(col, -row, s=20, color = color)
 
-grid = np.array([[[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 2, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-[[0, 0, 0, 0], [0, 0, 3, 1], [2, 0, 2, 1], [0, 0, 1, 0], [0, 0, 0, 0]],
-[[0, 0, 0, 0], [3, 1, 0, 0], [2, 0, 0, 0], [0, 0, 2, 0], [0, 0, 0, 0]],
-[[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 0, 0], [2, 0, 1, 0], [0, 0, 0, 0]],
-[[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]])
-holes = [(2, 2, "right"), (2, 1, "bottom"), (2, 0, "right"), (3, 3, "right")]
+def rotate_gear(grid, row, col, direction):
+    #direction = 1 is clockwise, -1 is counterclockwise
+    #first, turn the gear itself
+    assert(row != 0 and col != 0 and row != grid.shape[0]-1 and col != grid.shape[1]-1)
+    new_grid = np.copy(grid)
+    vals = grid[row, col, :] 
+    idx = (np.arange(len(vals)) - direction) % len(vals)
+    new_grid[row, col, :] = vals[idx]
+    #then, update all 4 surrounding gears.
+    new_grid[row+1][col][0] = (0 if new_grid[row][col][2]==1 else new_grid[row][col][2]) #gear below
+    new_grid[row][col-1][1] = (0 if new_grid[row][col][3]==1 else new_grid[row][col][3]) #gear at left
+    new_grid[row-1][col][2] = (0 if new_grid[row][col][0]==1 else new_grid[row][col][0]) #gear above
+    new_grid[row][col+1][3] = (0 if new_grid[row][col][1]==1 else new_grid[row][col][1]) #gear at right
+    return new_grid
+
 destination = holes[-1]
 plot_grid(grid, holes)
+for move in move_history:
+    grid = rotate_gear(grid, *move)
+    plot_grid(grid, holes)

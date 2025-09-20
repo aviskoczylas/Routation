@@ -7,16 +7,29 @@ from collections import deque
 
 #assuming i can get the solver runtime issue fixed,
 #1: make the grid generator only use predefined gears but place them in random spots
-#2: possibly use set hole locations
+#then push to github
+#2: implement a heuristic to decrease runtime
+#then push to github
+#3: implement the solver in c++ to go even faster
+
 
 show_each_step = 1
-num_bad_holes = 3 
+num_bad_holes = 3
 num_red_pieces = 3
-min_sol_steps = 5
-max_sol_steps = 15
+randomize_num_holes_and_pieces = True
+min_sol_steps = 30
+max_sol_steps = 50
 num_rows = 3
 num_cols = 3
-prob0 = 0.65
+gears = [np.array([0,0,0,0]),
+         np.array([1,0,0,0]),
+         np.array([1,0,0,0]),
+         np.array([1,0,0,0]),
+         np.array([1,1,0,0]),
+         np.array([0,1,1,0]),
+         np.array([1,0,1,0]),
+         np.array([1,1,1,0]),
+         np.array([1,1,1,0])]
 
 #the board is defined in order up, right, down, left
 directions = {
@@ -118,19 +131,37 @@ def display_move_history(move_history, grid):
         gear_num = gear_nums[(row, col)]
         print(f"rotate gear {gear_num} {direction}.")
 
-def generate_random_grid(num_rows, num_cols, prob0):
+def generate_random_grid(num_rows, num_cols, gears):
     grid = np.zeros((num_rows+2, num_cols+2, 4))
-    for row in range(1,num_rows+1):
-        for col in range(1,num_cols+1):
-            if grid[row-1][col][2]!=1 and random.random() > prob0:
-                grid[row][col][0]=1
-            if grid[row][col+1][3]!=1 and random.random() > prob0:
-                grid[row][col][1]=1
-            if grid[row+1][col][0]!=1 and random.random() > prob0:
-                grid[row][col][2]=1
-            if grid[row][col-1][1]!=1 and random.random() > prob0:
-                grid[row][col][3]=1
+    taken_spots = [(0,0)]
+    spot = (0,0)
+    for gear in gears:
+        sampled_spots = []
+        while spot in taken_spots or placement_invalid(grid, rotated_gear, spot):
+            spot = (random.choice(range(1,num_rows+1)), random.choice(range(1,num_cols+1)))
+            rotated_gear = np.roll(gear, random.choice([0,1,2,3]))
+            if spot not in sampled_spots:
+                sampled_spots.append(spot)
+                if len(sampled_spots) >= num_rows*num_cols:
+                    return generate_random_grid(num_rows, num_cols, gears)
+            else:
+                continue
+        taken_spots.append(spot)
+        grid[spot] = rotated_gear
     return grid
+
+def placement_invalid(grid, gear, spot):
+    row = spot[0]
+    col = spot[1]
+    if gear[0] ==1 and grid[row-1,col][2]==1:
+            return True
+    if gear[1] ==1 and grid[row,col+1][3]==1:
+            return True
+    if gear[2] ==1 and grid[row+1,col][0]==1:
+            return True
+    if gear[3] ==1 and grid[row,col-1][1]==1:
+            return True
+    return False
 
 def add_pieces(grid, pieces):
     for row,col,dir in pieces:
@@ -236,14 +267,23 @@ def solve_grid(grid):
 
 solve_num = 0
 while True:
+    if randomize_num_holes_and_pieces:
+        num_bad_holes = random.choice([0,1,2,3,4,5])
+        num_red_pieces = random.choice([0,1,2,3,4,5])
     solve_num +=1
-    grid = generate_random_grid(num_rows, num_cols, prob0)
+    grid = generate_random_grid(num_rows, num_cols, gears)
     grid, holes = generate_piece_and_hole_locations(grid, num_bad_holes, num_red_pieces)
+    attempts = 0
+    while grid is None:
+        if attempts > 100:
+            num_bad_holes = random.choice([0,1,2,3,4,5])
+            num_red_pieces = random.choice([0,1,2,3,4,5])
+        attempts +=1
+        grid = generate_random_grid(num_rows, num_cols, gears)
+        grid, holes = generate_piece_and_hole_locations(grid, num_bad_holes, num_red_pieces)
     if solution_satisfied(grid, destination):
         continue #ignore a grid that's already solved.
-    while grid is None:
-        grid = generate_random_grid(num_rows, num_cols, prob0)
-        grid, holes = generate_piece_and_hole_locations(grid, num_bad_holes, num_red_pieces)
+
     #at this point, i have a valid grid with holes - solve it.
     print(f"Solve attempt {solve_num}")
     sol_grid, move_history = solve_grid(grid)
@@ -255,15 +295,15 @@ while True:
     else:
         print("No valid solution for this one")
 print("Starting grid:")
-print(grid)
-print(holes)
+print("grid = ",repr(grid))
+print("holes = ",holes)
 plot_grid(grid, holes)
 if show_each_step:
     for row, col, direction in move_history:
         grid = rotate_gear(grid, row, col, direction)
         plot_grid(grid, holes)
-    print(len(move_history))
 else:
     display_move_history(move_history, sol_grid)
     plot_grid(sol_grid, holes)
+print("move_history = ", move_history)
 
