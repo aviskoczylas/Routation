@@ -12,12 +12,6 @@ directions = {
   "left": [3,1]
 }
 
-'''grid = np.array([[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
-                 [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,1],[0,0,1,0],[0,0,0,0]],
-                 [[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,1],[0,0,1,1],[0,0,0,0]],
-                 [[0,0,0,0],[1,1,0,1],[0,1,0,0],[0,0,0,0],[0,0,0,1],[0,0,0,0]], 
-                 [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]]) 
-'''
 grid =  np.array([[[0., 0., 0., 0.],
         [0., 0., 0., 0.],
         [0., 0., 0., 0.],
@@ -48,22 +42,16 @@ grid =  np.array([[[0., 0., 0., 0.],
         [0., 0., 0., 0.],
         [0., 0., 0., 0.]]])
 holes =  [(3, 3, 'bottom'), (2, 3, 'right'), (3, 1, 'bottom'), (1, 1, 'right'), (0, 3, 'bottom')]
+destination = holes[-1]
 
 pieces_provided_seperately = False
 show_each_step = 0
 
-#specify starting info (red and green pieces, holes, destination)
-'''holes = [(3, 3, "bottom"),(2, 2, "right"),(1, 1, "bottom"),(3, 2, "bottom"),(3,1, "bottom")]
-'''
+#specify holes if not already on grid
+pieces = []
+green = []
 
-
-
-
-
-
-destination = holes[-1]
-
-def plot_grid(grid, holes):
+def plot_grid(grid, holes, num_moves):
     fig, ax = plt.subplots()
     radius = 0.6
     gear_data = []
@@ -115,9 +103,11 @@ def plot_grid(grid, holes):
                 ax.fill(x, y, color=color)
     plot_holes(holes)
 
-    plt.title('testing', fontsize = 20)
+    plt.title(f"{num_moves} moves minimum", fontsize = 15)
     plt.tight_layout()
     plt.gca().tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    plt.xlim([0,4])
+    plt.ylim([-4,0])
     plt.show()
 
 def plot_holes(holes):
@@ -155,26 +145,25 @@ def display_move_history(move_history, grid):
         gear_num = gear_nums[(row, col)]
         print(f"rotate gear {gear_num} {direction}.")
 
-if pieces_provided_seperately:
-    def add_pieces(grid):
-        for row,col,dir in pieces:
-            if (row,col,dir) == green:
-                val = 3
-            else:
-                val = 2
-            if dir == "top":
-                grid[row][col][0] = val
-                grid[row-1][col][2] = val
-            elif dir == "right":
-                grid[row][col][1] = val
-                grid[row][col+1][3] = val
-            elif dir == "bottom":
-                grid[row][col][2] = val
-                grid[row+1][col][0] = val
-            elif dir == "left":
-                grid[row][col][3] = val
-                grid[row][col-1][1] = val
-        return grid
+def add_pieces(grid):
+    for row,col,dir in pieces:
+        if (row,col,dir) == green:
+            val = 3
+        else:
+            val = 2
+        if dir == "top":
+            grid[row][col][0] = val
+            grid[row-1][col][2] = val
+        elif dir == "right":
+            grid[row][col][1] = val
+            grid[row][col+1][3] = val
+        elif dir == "bottom":
+            grid[row][col][2] = val
+            grid[row+1][col][0] = val
+        elif dir == "left":
+            grid[row][col][3] = val
+            grid[row][col-1][1] = val
+    return grid
 
 def rotate_gear(grid, row, col, direction):
     #direction = 1 is clockwise, -1 is counterclockwise
@@ -236,14 +225,13 @@ def solve_grid(grid):
     assert(False)
 if pieces_provided_seperately:
     grid = add_pieces(grid)
-plot_grid(grid, holes)
 sol_grid, move_history = solve_grid(grid)
+plot_grid(grid, holes, len(move_history))
 if show_each_step:
     for row, col, direction in move_history:
         grid = rotate_gear(grid, row, col, direction)
-        plot_grid(grid, holes)
+        plot_grid(grid, holes, len(move_history))
 else:
     display_move_history(move_history, sol_grid)
-    plot_grid(sol_grid, holes)
+    plot_grid(sol_grid, holes, len(move_history))
 print("move_history = ", move_history)
-print(len(move_history))

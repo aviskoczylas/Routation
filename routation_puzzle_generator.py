@@ -4,23 +4,23 @@ from matplotlib.patches import Circle
 from shapely.geometry import Point
 import random
 from collections import deque
-
-#assuming i can get the solver runtime issue fixed,
-#1: make the grid generator only use predefined gears but place them in random spots
+#TODO
+#1: implement a heuristic to decrease runtime
 #then push to github
-#2: implement a heuristic to decrease runtime
-#then push to github
-#3: implement the solver in c++ to go even faster
+#: implement the solver in c++ to go even faster
 
 
-show_each_step = 1
+show_each_step = 0
 num_bad_holes = 3
-num_red_pieces = 3
+num_red_pieces = 0
 randomize_num_holes_and_pieces = True
-min_sol_steps = 30
-max_sol_steps = 50
+min_sol_steps = 15
+max_sol_steps = 99
 num_rows = 3
 num_cols = 3
+
+write_to_file = 1
+puzzle_num = 19  #only matters if writing to file
 gears = [np.array([0,0,0,0]),
          np.array([1,0,0,0]),
          np.array([1,0,0,0]),
@@ -28,7 +28,7 @@ gears = [np.array([0,0,0,0]),
          np.array([1,1,0,0]),
          np.array([0,1,1,0]),
          np.array([1,0,1,0]),
-         np.array([1,1,1,0]),
+         np.array([1,1,1,0]),#this one is the real question mark
          np.array([1,1,1,0])]
 
 #the board is defined in order up, right, down, left
@@ -39,7 +39,7 @@ directions = {
   "left": [3,1]
 }
 
-def plot_grid(grid, holes):
+def plot_grid(grid, holes, num_moves, save):
     fig, ax = plt.subplots()
     radius = 0.6
     gear_data = []
@@ -90,10 +90,14 @@ def plot_grid(grid, holes):
                 x, y = poly.exterior.xy
                 ax.fill(x, y, color=color)
     plot_holes(holes)
-
-    plt.title('testing', fontsize = 20)
+    plt.title(f"{num_moves} moves minimum", fontsize = 15)
     plt.tight_layout()
     plt.gca().tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    plt.xlim([0.25,3.75])
+    plt.ylim([-3.75,-0.25])
+
+    if save:
+        plt.savefig(f"sample_puzzles/puzzle{puzzle_num}.png")
     plt.show()
 
 def plot_holes(holes):
@@ -130,6 +134,10 @@ def display_move_history(move_history, grid):
             assert(False)
         gear_num = gear_nums[(row, col)]
         print(f"rotate gear {gear_num} {direction}.")
+        if write_to_file:
+            with open(f"sample_solutions/sol{puzzle_num}.txt", "a") as file:
+                file.write(f"rotate gear {gear_num} {direction}.\n")
+
 
 def generate_random_grid(num_rows, num_cols, gears):
     grid = np.zeros((num_rows+2, num_cols+2, 4))
@@ -184,24 +192,33 @@ def add_pieces(grid, pieces):
     return grid
 
 def generate_piece_and_hole_locations(grid, num_bad_holes, num_red_pieces):
-    valid_piece_or_hole_spots = []
+    valid_piece_spots = []
     for row in range(grid.shape[0] - 1):
         for col in range(grid.shape[1] - 1):
             if col != 0 and grid[row][col][2] == 0 and grid[row+1][col][0] == 0:
-                valid_piece_or_hole_spots.append((row, col, "bottom"))
+                valid_piece_spots.append((row, col, "bottom"))
             if row != 0 and grid[row][col][1] == 0 and grid[row][col+1][3] == 0:
-                valid_piece_or_hole_spots.append((row, col, "right"))
-    if len(valid_piece_or_hole_spots) < num_bad_holes + num_red_pieces + 2:
+                valid_piece_spots.append((row, col, "right"))
+    if len(valid_piece_spots) < num_red_pieces + 1:
         return (None, None)#not enough open spots
-    chosen_spots = random.sample(valid_piece_or_hole_spots, num_bad_holes + num_red_pieces + 2)
-    bad_holes = chosen_spots[:num_bad_holes]
-    global destination
-    destination = chosen_spots[num_bad_holes]
-    holes = bad_holes + [destination]
-    red_pieces = chosen_spots[num_bad_holes + 1 : num_bad_holes + 1 + num_red_pieces]
+    chosen_piece_spots = random.sample(valid_piece_spots, num_red_pieces + 1)
+    red_pieces = chosen_piece_spots[:-1]
     global green
-    green = chosen_spots[-1]
+    green = chosen_piece_spots[-1]
     pieces = red_pieces + [green]
+    valid_hole_spots = []
+    for row in range(grid.shape[0] - 1):
+        for col in range(grid.shape[1] - 1):
+            if col != 0 and (row,col,"bottom") not in chosen_piece_spots:
+                valid_hole_spots.append((row, col, "bottom"))
+            if row != 0 and (row,col,"right") not in chosen_piece_spots:
+                valid_hole_spots.append((row, col, "right"))
+    chosen_hole_spots = random.sample(valid_hole_spots, num_bad_holes + 1)
+    bad_holes = chosen_hole_spots[:-1]
+    global destination
+    destination = chosen_hole_spots[-1]
+    holes = bad_holes + [destination]
+
     grid = add_pieces(grid, pieces)
     return (grid, holes)
 
@@ -294,16 +311,15 @@ while True:
             print(f"Solution was too short: only {len(move_history)} steps")
     else:
         print("No valid solution for this one")
-print("Starting grid:")
 print("grid = ",repr(grid))
 print("holes = ",holes)
-plot_grid(grid, holes)
+plot_grid(grid, holes, len(move_history), write_to_file)
 if show_each_step:
     for row, col, direction in move_history:
         grid = rotate_gear(grid, row, col, direction)
-        plot_grid(grid, holes)
+        plot_grid(grid, holes, len(move_history), 0)
 else:
     display_move_history(move_history, sol_grid)
-    plot_grid(sol_grid, holes)
+    plot_grid(sol_grid, holes, len(move_history), 0)
 print("move_history = ", move_history)
 

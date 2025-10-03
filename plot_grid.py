@@ -1,41 +1,41 @@
+from numpy import array
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from shapely.geometry import Point
 
-
-
-grid =  np.array([[[0., 0., 0., 0.],
+show_each_step = 0
+grid =  array([[[0., 0., 0., 0.],
         [0., 0., 0., 0.],
-        [0., 0., 0., 0.],
-        [0., 0., 0., 0.],
-        [0., 0., 0., 0.]],
-
-       [[0., 2., 0., 0.],
-        [0., 1., 1., 2.],
-        [1., 2., 1., 0.],
-        [1., 0., 0., 2.],
+        [0., 0., 2., 0.],
+        [0., 0., 3., 0.],
         [0., 0., 0., 0.]],
 
        [[0., 0., 0., 0.],
-        [0., 0., 0., 0.],
-        [0., 0., 1., 1.],
         [1., 0., 1., 1.],
+        [2., 2., 0., 1.],
+        [3., 1., 0., 2.],
         [0., 0., 0., 0.]],
 
        [[0., 0., 0., 0.],
-        [1., 0., 3., 0.],
-        [0., 0., 2., 1.],
+        [0., 0., 1., 1.],
+        [1., 2., 1., 1.],
+        [1., 1., 0., 2.],
+        [0., 0., 0., 0.]],
+
+       [[0., 0., 0., 0.],
+        [0., 0., 2., 0.],
         [0., 1., 2., 1.],
+        [0., 1., 0., 0.],
         [0., 0., 0., 0.]],
 
        [[0., 0., 0., 0.],
-        [3., 0., 0., 0.],
         [2., 0., 0., 0.],
         [2., 0., 0., 0.],
+        [0., 0., 0., 0.],
         [0., 0., 0., 0.]]])
-holes =  [(2, 3, 'right'), (2, 0, 'right'), (1, 3, 'right'), (0, 1, 'bottom')]
-move_history =  [(1, 1, -1), (1, 1, -1), (1, 2, 1), (2, 3, 1), (2, 3, 1), (2, 2, 1), (2, 3, -1), (3, 3, 1), (3, 2, 1), (3, 1, -1), (3, 2, 1), (3, 2, 1), (3, 3, 1), (2, 3, 1), (2, 2, -1), (1, 2, 1), (1, 1, -1)]
+holes =  [(3, 2, 'right'), (2, 0, 'right'), (1, 1, 'bottom'), (1, 3, 'right'), (1, 2, 'bottom')]
+move_history =  [(2, 3, 1), (2, 2, 1), (3, 2, 1), (3, 2, 1), (2, 2, -1), (2, 3, -1), (2, 2, 1), (3, 2, -1), (3, 3, 1), (3, 2, -1), (2, 2, -1), (2, 3, 1), (1, 3, -1), (2, 2, -1), (1, 2, 1)]
 
 
 
@@ -48,7 +48,7 @@ directions = {
   "left": [3,1]
 }
 
-def plot_grid(grid, holes):
+def plot_grid(grid, holes, num_moves):
     fig, ax = plt.subplots()
     radius = 0.6
     gear_data = []
@@ -103,6 +103,9 @@ def plot_grid(grid, holes):
     plt.title('testing', fontsize = 20)
     plt.tight_layout()
     plt.gca().tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    plt.xlim([0,4])
+    plt.ylim([-4,0])
+    plt.title(f"{num_moves} moves minimum", fontsize = 15)
     plt.show()
 
 def plot_holes(holes):
@@ -137,9 +140,28 @@ def rotate_gear(grid, row, col, direction):
     new_grid[row-1][col][2] = (0 if new_grid[row][col][0]==1 else new_grid[row][col][0]) #gear above
     new_grid[row][col+1][3] = (0 if new_grid[row][col][1]==1 else new_grid[row][col][1]) #gear at right
     return new_grid
+def display_move_history(move_history, grid):
+    gear_nums = {}
+    gear_num = 1
+    for row in range(1,grid.shape[0]-1):
+        for col in range(1,grid.shape[1]-1):
+            gear_nums[(row, col)] = gear_num
+            gear_num+=1
+    for row, col, dir in move_history:
+        if dir == 1:
+            direction = "clockwise"
+        elif dir == -1:
+            direction = "counterclockwise"
+        else:
+            assert(False)
+        gear_num = gear_nums[(row, col)]
+        print(f"rotate gear {gear_num} {direction}.")
+
 
 destination = holes[-1]
-plot_grid(grid, holes)
+plot_grid(grid, holes, len(move_history))
 for move in move_history:
     grid = rotate_gear(grid, *move)
-    plot_grid(grid, holes)
+    if show_each_step:
+        plot_grid(grid, holes, len(move_history))
+display_move_history(move_history, grid)
