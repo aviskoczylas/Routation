@@ -126,7 +126,7 @@ def plot_holes(holes):
             col-=0.5
         else:
             assert(False)
-        plt.scatter(col, -row, s=20, color = color)
+        plt.scatter(col, -row, s=100, color = color)
 
 def display_move_history(move_history, grid):
     gear_nums = {}

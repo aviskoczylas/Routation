@@ -124,7 +124,7 @@ def plot_holes(holes):
             col-=0.5
         else:
             assert(False)
-        plt.scatter(col, -row, s=20, color = color)
+        plt.scatter(col, -row, s=100, color = color)
 
 def rotate_gear(grid, row, col, direction):
     #direction = 1 is clockwise, -1 is counterclockwise
