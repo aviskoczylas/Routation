@@ -201,28 +201,33 @@ def piece_fell(grid, holes, destination):
                 return True
     return False
 
+def add_next_grids(grid, current_grid,checked_grids, q, move_history):
+    rotations = [1,-1]
+    for row in range(1, grid.shape[0] - 1):
+        for col in range(1, grid.shape[1] - 1):
+            if gear_locked(current_grid, row, col):
+                continue
+            for direction in rotations:
+                new_grid = rotate_gear(current_grid, row, col, direction)
+                new_grid_bytes = new_grid.tobytes()
+                if (new_grid_bytes not in checked_grids) and not piece_fell(new_grid, holes, destination):
+                    new_move_history = move_history + [(row, col, direction)]
+                    checked_grids.add(new_grid_bytes)
+                    q.append((new_grid, new_move_history))
+    return (checked_grids, q)
+
 def solve_grid(grid):
     q = deque([(grid, [])])    
     checked_grids = {grid.tobytes()}
-    rotations = [1,-1]
     while q:
         current_grid, move_history = q.popleft()
         if solution_satisfied(current_grid, destination):
             return current_grid, move_history
-        for row in range(1, grid.shape[0] - 1):
-            for col in range(1, grid.shape[1] - 1):
-                if gear_locked(current_grid, row, col):
-                    continue
-                for direction in rotations:
-                    new_grid = rotate_gear(current_grid, row, col, direction)
-                    new_grid_bytes = new_grid.tobytes()
-                    if (new_grid_bytes not in checked_grids) and not piece_fell(new_grid, holes, destination):
-                        new_move_history = move_history + [(row, col, direction)]
-                        checked_grids.add(new_grid_bytes)
-                        q.append((new_grid, new_move_history))
+        checked_grids, q = add_next_grids(grid, current_grid,checked_grids, q, move_history)
     # if this point is reached, there is no valid solution.
     print("no solution found. Ending program.")
     assert(False)
+
 if pieces_provided_seperately:
     grid = add_pieces(grid)
 sol_grid, move_history = solve_grid(grid)
