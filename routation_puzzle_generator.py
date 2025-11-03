@@ -6,22 +6,19 @@ import random
 from collections import deque
 import os
 #TODO
-#1: implement a heuristic to decrease runtime
-#then push to github
-#: implement the solver in c++ to go even faster
-
+#implement a heuristic to decrease runtime. Possibly even migrate to c++?
 
 show_each_step = 0
 num_bad_holes = 1
 num_red_pieces = 2
 randomize_num_holes_and_pieces = True
-min_sol_steps = 18
+min_sol_steps = 19
 max_sol_steps = 99
 num_rows = 3
 num_cols = 3
 
 write_to_file = 1
-puzzle_num = 30  #only matters if writing to file
+puzzle_num = 36  #only matters if writing to file
 if os.path.exists(f"sample_puzzles/puzzle{puzzle_num}.png") or os.path.exists(f"sample_solutions/sol{puzzle_num}.txt"):
     print("Error - path already exists.")
     assert(False)
