@@ -7,5 +7,5 @@ This repo contains sample puzzles and solutions generated using my routation_puz
 
 It also has a solver for any given board/hole configuration. The solution is generated as text telling you which gear to rotate in which direction at each step.
 
-If you are interested in making a puzzle for your own use, 3d models of the Routation board and pieces can be found in the 3d printing folder, soon to be uploaded to a dedicated STL sharing website.
+If you are interested in making a puzzle for your own use, 3d models of the Routation board and pieces can be found at https://makerworld.com/en/@user_2042744397/upload
 
